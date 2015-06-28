@@ -12,6 +12,13 @@
   var game = function() {
     this.begin = new Date();
 
+    // spawn html5 WebWorker if it is supported
+    if (global.Worker) {
+      this.worker = new global.Worker('src/task.js');
+    } else {
+      this.worker = null;
+    }
+
     // we have two players
     this.red = new user(this, 'red');
     this.yellow = new user(this, 'yellow');
@@ -106,7 +113,12 @@
 
     onUserPlay: function(selectedColumn) {
       // increase column +1
-      var activeRow = ++this.lastColIndex[parseInt(selectedColumn)];
+      var selectedColumnNumber = parseInt(selectedColumn);
+      if (this.lastColIndex[selectedColumnNumber] === 5) {
+        alert('This column is full. Please enter another column!');
+        return this.play();
+      }
+      var activeRow = ++this.lastColIndex[selectedColumnNumber];
 
       // res, yellow
       var activePlayer = this.turn;
@@ -125,6 +137,12 @@
 
       // fire render, calculation events etc.
       this.events.onBoardChange.apply(this, [movement, activePlayer]);
+
+      if (this.worker) {
+        this.worker.postMessage(this.board);
+      } else {
+        // TODO: implement internal calculation logic
+      }
     },
 
     onBoardChange: function(currentPosition, color) {
