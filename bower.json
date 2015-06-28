@@ -1,0 +1,9 @@
+{
+  "name": "connect-four",
+  "description": "Connect Four game logic",
+  "version": "0.0.1",
+  "homepage": "https://github.com/erhangundogan/connect-four",
+  "license": "MIT",
+  "dependencies": {
+  }
+}
