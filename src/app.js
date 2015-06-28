@@ -20,34 +20,72 @@
     this.begin = [this.red, this.yellow][Math.round(Math.random(1))];
     this.turn = this.begin.color;
 
-    // history
-    this.moves = [];
-
     /**
-     * 6: [ 0, 1, 2, 3, 4, 5 ]
-     * 5: [ 0, 1, 2, 3, 4, 5 ]
-     * 4: [ 0, 1, 2, 3, 4, 5 ]
-     * 3: [ 0, 1, 2, 3, 4, 5 ]
-     * 2: [ 0, 1, 2, 3, 4, 5 ]
-     * 1: [ 0, 1, 2, 3, 4, 5 ]
-     * 0: [ 0, 1, 2, 3, 4, 5 ]
+     * 5: [ 0, 1, 2, 3, 4, 5, 6 ]
+     * 4: [ 0, 1, 2, 3, 4, 5, 6 ]
+     * 3: [ 0, 1, 2, 3, 4, 5, 6 ]
+     * 2: [ 0, 1, 2, 3, 4, 5, 6 ]
+     * 1: [ 0, 1, 2, 3, 4, 5, 6 ]
+     * 0: [ 0, 1, 2, 3, 4, 5, 6 ]
      *
-     * board[cols][rows]
+     * board[rows][cols]
      * board[0][0] => bottom left position
-     * board[6][5] => top righ position
+     * board[5][0] => top left position
+     * board[5][6] => top right position
+     * board[0][6] => bottom right position
      *
      * @type {Array}
      */
+    this.moves = [];
     this.board = [];
-    var col = [];
-    for (var i = 0; i < 7; i++) {
-      this.board.push(col);
+    var row = [null, null, null, null, null, null, null];
+    for (var i = 0; i < 6; i++) {
+      this.board.push(row);
     }
+
+    // keep column last index
+    this.lastColIndex = [-1, -1, -1, -1, -1, -1, -1];
 
     return this;
   };
   game.prototype.yellow = typeof user;
   game.prototype.red = typeof user;
+  game.prototype.render = function(renderPosition, renderColor) {
+    // jQuery can be replaced with document.createFragment combined with document.getElementById
+    if (global.jQuery) {
+      if (renderPosition && renderColor) {
+        // render specific cell
+        var cell = '#r' + renderPosition.row + 'c' + renderPosition.col;
+        global.$(cell).addClass(renderColor);
+
+      } else {
+        // render all
+        var board = global.$('<table></table>');
+        for (var row = 5; row >= 0; row--) {
+          var rowElement = global.$('<tr></tr>').attr('id', 'r' + row);
+
+          for (var col = 0; col < 7; col++) {
+            var colElement = global.$('<td></td>').attr('id', 'r' + row + 'c' + col);
+            var colColor = this.board[row][col];
+            if (colColor) {
+              colElement.addClass(colColor);
+            }
+            rowElement.append(colElement);
+          }
+          board.append(rowElement);
+        }
+        var colNumbers = global
+          .$('<tr><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr>');
+        board.append(colNumbers);
+
+        var continuePlay = global
+          .$('<input type="button" value="Continue" onclick="window.connectFour.play()">');
+
+        global.$('#board').empty().append(board).append(continuePlay);
+      }
+    }
+  };
+
   game.prototype.events = {
     onColumnSelect: function(selectedColumn) {
       var column = -1;
@@ -55,23 +93,53 @@
         column = parseInt(selectedColumn)
       } catch(e) {
         alert('Please enter number between 0-6!');
+        return this.play();
       }
 
-      if (column >= 0 && column < 6) {
-        this.board.
-        this.onUserPlay();
+      if (column >= 0 && column <= 6) {
+        this.events.onUserPlay.call(this, selectedColumn);
+      } else {
+        alert('Please enter number between 0-6!');
+        return this.play();
       }
     },
 
     onUserPlay: function(selectedColumn) {
+      // increase column +1
+      var activeRow = ++this.lastColIndex[parseInt(selectedColumn)];
 
+      // res, yellow
+      var activePlayer = this.turn;
+
+      // which position played
+      var movement = new position(activeRow, selectedColumn);
+
+      // set board position red or yellow
+      this.board[activeRow][selectedColumn] = activePlayer;
+
+      // history
+      this.moves.push(movement);
+
+      // change player turn
+      this.turn = this.turn === 'red' ? 'yellow' : 'red';
+
+      // fire render, calculation events etc.
+      this.events.onBoardChange.apply(this, [movement, activePlayer]);
+    },
+
+    onBoardChange: function(currentPosition, color) {
+      this.render(currentPosition, color);
+      this.play();
     }
   };
 
   game.prototype.play = function() {
-    var message = this.turn + ' player\'s turn. Please choose a column top play (0: leftmost, 6: rightmost)';
+    var message = this.turn + ' player\'s turn. Please choose a column top play (0:leftmost, 6:rightmost, cancel:stop)';
     var column = prompt(message, '0');
-    this.events.onColumnSelect(column);
+    if (!column) {
+      return;
+    }
+    this.events.onColumnSelect.call(this, column);
   };
 
   var user = function(game, color) {
@@ -88,6 +156,13 @@
   };
 
   global.connectFour = new game();
-  global.connectFour.play();
 
 })(window);
+
+
+$(function() {
+  if (window.connectFour) {
+    window.connectFour.render();
+    window.connectFour.play();
+  }
+});

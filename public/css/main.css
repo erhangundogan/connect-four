@@ -1,0 +1,22 @@
+.red {
+  background-color: red !important;
+}
+
+.yellow {
+  background-color: yellow !important;
+}
+
+.container table {
+  margin-bottom: 10px;
+}
+
+.container table, .container table tr td {
+  border: solid 1px #ccc;
+}
+
+.container table tr td {
+  width: 32px;
+  height: 32px;
+  background-color: white;
+  text-align: center;
+}
